@@ -9,7 +9,8 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 
-#### FUNCTIONS 1.0
+#### FUNCTIONS 1.1
+import requests
 
 def validateFilename(filename):
     filenameregex = '^[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+_[0-9][0-9][0-9][0-9]_[0-9QY][0-9]$'
@@ -37,19 +38,18 @@ def validateFilename(filename):
 
 def validateURL(url):
     try:
-        r = urllib2.urlopen(url)
+        r = requests.get(url)
         count = 1
-        while r.getcode() == 500 and count < 4:
+        while r.status_code == 500 and count < 4:
             print ("Attempt {0} - Status code: {1}. Retrying.".format(count, r.status_code))
             count += 1
-            r = urllib2.urlopen(url)
+            r = requests.get(url)
         sourceFilename = r.headers.get('Content-Disposition')
-
         if sourceFilename:
             ext = os.path.splitext(sourceFilename)[1].replace('"', '').replace(';', '').replace(' ', '')
         else:
             ext = os.path.splitext(url)[1]
-        validURL = r.getcode() == 200
+        validURL = r.status_code == 200
         validFiletype = ext.lower() in ['.csv', '.xls', '.xlsx']
         return validURL, validFiletype
     except:
@@ -85,7 +85,7 @@ def convert_mth_strings ( mth_string ):
 #### VARIABLES 1.0
 
 entity_id = "E1201_PBO_gov"
-url = "http://www.poole.gov.uk/your-council/council-budgets-and-spending/transparency/payments-to-suppliers/"
+url = "http://archive.poole.gov.uk/your-council/council-budgets-and-spending/transparency/payments-to-suppliers/?structureID=U46406a60875e7&ref=S4D36C2A2D788F"
 errors = 0
 data = []
 
@@ -101,10 +101,10 @@ soup = BeautifulSoup(html, "lxml")
 block = soup.find('div', attrs = {'class':'element-column-left-alpha-inner'})
 links =block.findAll('a', 'oLinkAssetXls')
 for link in links:
-    url = 'http://www.poole.gov.uk' + link['href']
+    url = 'http://archive.poole.gov.uk' + link['href']
     csvfile = link.text.strip()
     if 'Payment Card Data' not in csvfile:
-        url = 'http://www.poole.gov.uk' + link['href']
+        url = 'http://archive.poole.gov.uk' + link['href']
         csvfile = link.text.strip()
         csvYr = csvfile[-4:]
         csvMth = csvfile[:3]
